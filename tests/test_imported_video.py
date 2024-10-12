@@ -23,6 +23,7 @@ from loguru import logger
 
 from tests.testing_medias import get_cat_video_path
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.music_building_context import MusicBuildingContext
 from vikit.video.imported_video import ImportedVideo
 from vikit.video.video import VideoBuildSettings
@@ -45,14 +46,13 @@ class TestImportedVideo:
             logger.debug(f"pbv.media_url : {vid.media_url}")
             assert vid.media_url, "We should have a media_url set"
             # here we expect the default background music to be sliced and used
-            vid_result = await vid.build(
+            vid_result = await LocalEngine(
                 build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True, generate_background_music=False
                     )
                 )
-            )
-
+            ).generate(vid)
             assert vid_result, "The video mixing should have worked"
             assert (
                 vid_result.background_music

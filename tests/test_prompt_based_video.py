@@ -23,6 +23,7 @@ from loguru import logger
 import tests.testing_medias as test_media
 import tests.testing_tools as tools  # used to get a library of test prompts
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.music_building_context import MusicBuildingContext
 from vikit.prompt.prompt_factory import PromptFactory
 from vikit.video.prompt_based_video import PromptBasedVideo
@@ -64,7 +65,7 @@ class TestPromptBasedVideo:
                     prompt_text=TEST_PROMPT,
                 )
             )
-            await pbvid.build()
+            await LocalEngine().generate(pbvid)
 
             assert pbvid.media_url, "media URL is None, was not updated"
             assert pbvid._background_music_file_name is None
@@ -75,9 +76,9 @@ class TestPromptBasedVideo:
     async def test_build_prompt_based_video_no_bg_music_read_aloud_prompt(self):
         with WorkingFolderContext():
             pbvid = PromptBasedVideo(tools.test_prompt_library["moss_stones-train_boy"])
-            await pbvid.build(
+            await LocalEngine(
                 build_settings=VideoBuildSettings(include_read_aloud_prompt=True)
-            )
+            ).generate(pbvid)
 
             assert pbvid._background_music_file_name is None
             assert pbvid.media_url, "media URL was not updated"
@@ -90,15 +91,14 @@ class TestPromptBasedVideo:
     ):
         with WorkingFolderContext():
             pbvid = PromptBasedVideo(tools.test_prompt_library["moss_stones-train_boy"])
-            await pbvid.build(
+            await LocalEngine(
                 build_settings=VideoBuildSettings(
                     include_read_aloud_prompt=True,
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True, generate_background_music=False
                     ),
                 )
-            )
-
+            ).generate(pbvid)
             assert pbvid.media_url, "media URL was not updated"
             assert os.path.exists(pbvid.media_url), "The generated video does not exist"
 
@@ -125,10 +125,7 @@ class TestPromptBasedVideo:
                   near the beach"""
             )
             pbvid = PromptBasedVideo(prompt=prompt)
-
-            pbvid = await pbvid.build(
-                build_settings=bld_settings,
-            )
+            pbvid = await LocalEngine(build_settings=bld_settings).generate(pbvid)
             assert pbvid.media_url, "media URL was not updated"
             assert os.path.exists(pbvid.media_url), "The generated video does not exist"
 
@@ -154,10 +151,7 @@ class TestPromptBasedVideo:
                 ml_gateway=bld_settings.get_ml_models_gateway()
             ).create_prompt_from_text(TEST_PROMPT)
             pbvid = PromptBasedVideo(prompt=prompt)
-
-            pbvid = await pbvid.build(
-                build_settings=bld_settings,
-            )
+            pbvid = await LocalEngine(build_settings=bld_settings).generate(pbvid)
             assert pbvid.media_url, "media URL was not updated"
             assert os.path.exists(pbvid.media_url), "The generated video does not exist"
 
@@ -170,7 +164,9 @@ class TestPromptBasedVideo:
                 "A group of stones in a forest",
             )
             pbv = PromptBasedVideo(prompt=prompt)
-            result = await pbv.build(build_settings=VideoBuildSettings(prompt=prompt))
+            result = await LocalEngine(
+                build_settings=VideoBuildSettings(prompt=prompt)
+            ).generate(pbv)
             assert result is not None
             assert os.path.exists(result.media_url)
 
@@ -205,8 +201,7 @@ class TestPromptBasedVideo:
             bld_settings.prompt = test_prompt
 
             video = PromptBasedVideo(test_prompt)
-            vid_final = await video.build(build_settings=bld_settings)
-
+            vid_final = await LocalEngine(build_settings=bld_settings).generate(video)
             assert vid_final.media_url is not None
             assert vid_final.background_music is not None
 
@@ -232,7 +227,7 @@ class TestPromptBasedVideo:
             )
 
             video = PromptBasedVideo(prompt=test_prompt)
-            await video.build(bld_sett)
+            await LocalEngine(build_settings=bld_sett).generate(video)
 
             assert video.media_url is not None
             assert os.path.exists(video.media_url)
@@ -259,7 +254,7 @@ class TestPromptBasedVideo:
             )
 
             video = PromptBasedVideo(prompt=test_prompt)
-            await video.build(bld_sett)
+            await LocalEngine(build_settings=bld_sett).generate(video)
 
             assert video.media_url is not None
             assert os.path.exists(video.media_url)

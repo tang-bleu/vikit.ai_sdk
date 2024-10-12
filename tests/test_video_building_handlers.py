@@ -20,6 +20,7 @@ from loguru import logger
 
 from tests.testing_medias import get_test_prompt_recording_trainboy
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.prompt.recorded_prompt import RecordedPrompt
 from vikit.video.building.handlers.use_prompt_audio_track_and_audio_merging_handler import (
     UsePromptAudioTrackAndAudioMergingHandler,
@@ -59,7 +60,9 @@ class TestVideoBuildingHandlers:
             vid = RawTextBasedVideo(raw_text_prompt="test")
             prompt = RecordedPrompt()
             prompt.audio_recording = get_test_prompt_recording_trainboy()
-            await vid.build(build_settings=VideoBuildSettings(prompt=prompt))
+            await LocalEngine(
+                build_settings=VideoBuildSettings(prompt=prompt)
+            ).generate(vid)
             assert vid is not None, "Video built should not be None"
             assert vid.media_url is not None, "Video built should have a media url"
 

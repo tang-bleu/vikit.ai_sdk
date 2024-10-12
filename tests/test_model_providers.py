@@ -21,6 +21,7 @@ from loguru import logger
 import tests.testing_tools as tools  # used to get a library of test prompts
 from tests.testing_tools import test_prompt_library
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.music_building_context import MusicBuildingContext
 from vikit.prompt.prompt_factory import PromptFactory
 from vikit.video.composite_video import CompositeVideo
@@ -64,7 +65,7 @@ class TestModelProviders:
                 )
                 final_composite_video.append_video(video)
 
-            await final_composite_video.build(
+            await LocalEngine(
                 build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True, generate_background_music=True
@@ -73,7 +74,7 @@ class TestModelProviders:
                     include_read_aloud_prompt=True,
                     prompt=test_prompt_library["moss_stones-train_boy"],
                 )
-            )
+            ).generate(final_composite_video)
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -99,7 +100,7 @@ class TestModelProviders:
                 logger.debug(
                     f"target_model_provider: {video_build_settings.target_model_provider}"
                 )
-                await video.build(build_settings=video_build_settings)
+                await LocalEngine(build_settings=video_build_settings).generate(video)
 
     @pytest.mark.integration
     @pytest.mark.asyncio
@@ -126,4 +127,4 @@ class TestModelProviders:
             logger.debug(
                 f"target_model_provider: {video_build_settings.target_model_provider}"
             )
-            await video.build(build_settings=video_build_settings)
+            await LocalEngine(build_settings=video_build_settings).generate(video)

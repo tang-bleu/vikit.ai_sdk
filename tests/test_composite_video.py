@@ -28,6 +28,7 @@ from tests.testing_medias import (
 )
 from tests.testing_tools import test_prompt_library
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.music_building_context import MusicBuildingContext
 from vikit.prompt.prompt_factory import PromptFactory
 from vikit.video.composite_video import CompositeVideo
@@ -105,7 +106,7 @@ class TestCompositeVideo:
             video = ImportedVideo(test_media.get_cat_video_path())
             test_video_mixer = CompositeVideo()
             test_video_mixer.append_video(video)
-            built = await test_video_mixer.build(
+            built = await LocalEngine(
                 build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True, generate_background_music=True
@@ -114,7 +115,7 @@ class TestCompositeVideo:
                     include_read_aloud_prompt=True,
                     prompt=tools.test_prompt_library["tired"],
                 )
-            )
+            ).generate(test_video_mixer)
 
             assert built.media_url is not None
 
@@ -126,7 +127,7 @@ class TestCompositeVideo:
             video = ImportedVideo(test_media.get_cat_video_path())
             test_video_mixer = CompositeVideo()
             test_video_mixer.append_video(video)
-            await test_video_mixer.build()
+            await LocalEngine().generate(test_video_mixer)
             logger.debug(
                 f"Test video mix with preexisting video bin: {test_video_mixer}"
             )
@@ -149,7 +150,9 @@ class TestCompositeVideo:
             assert (
                 video._needs_video_reencoding
             ), f"Video should need reencoding, type: {type(video)}"
-            await test_video_mixer.build(VideoBuildSettings(test_mode=True))
+            await LocalEngine(
+                build_settings=VideoBuildSettings(test_mode=True)
+            ).generate(test_video_mixer)
             assert test_video_mixer.media_url is not None
 
     @pytest.mark.integration
@@ -193,7 +196,9 @@ class TestCompositeVideo:
             ).create_prompt_from_text(prompt_text)
             video_build_settings.prompt = prompt
 
-            await test_video_gpt.build(video_build_settings)
+            await LocalEngine(build_settings=video_build_settings).generate(
+                test_video_gpt
+            )
 
             assert test_video_gpt.media_url is not None
 
@@ -207,15 +212,15 @@ class TestCompositeVideo:
             raw_text_video = RawTextBasedVideo(test_prompt.text)
             test_video_mixer = CompositeVideo()
             test_video_mixer.append_video(raw_text_video).append_video(raw_text_video)
-            await test_video_mixer.build(
-                VideoBuildSettings(
+            await LocalEngine(
+                build_settings=VideoBuildSettings(
                     test_mode=True,
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True, generate_background_music=True
                     ),
                     prompt=test_prompt,
                 )
-            )
+            ).generate(test_video_mixer)
             assert (
                 test_video_mixer.media_url is not None
             ), "Media URL should not be null"
@@ -237,8 +242,8 @@ class TestCompositeVideo:
                 video_end
             )
 
-            final_video = await final_video.build(
-                VideoBuildSettings(
+            final_video = await LocalEngine(
+                build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True,
                         generate_background_music=False,
@@ -246,7 +251,7 @@ class TestCompositeVideo:
                     include_read_aloud_prompt=False,
                     prompt=test_prompt_library["moss_stones-train_boy"],
                 )
-            )
+            ).generate(final_video)
             assert final_video.media_url is not None
             assert final_video.background_music is not None
 
@@ -278,7 +283,7 @@ class TestCompositeVideo:
                 video = RawTextBasedVideo(subtitle.text)
                 final_composite_video.append_video(video)
 
-            await final_composite_video.build(
+            await LocalEngine(
                 build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         generate_background_music=False, apply_background_music=True
@@ -287,8 +292,7 @@ class TestCompositeVideo:
                     include_read_aloud_prompt=False,
                     prompt=prompt_with_recording,
                 )
-            )
-
+            ).generate(final_composite_video)
             assert final_composite_video.media_url is not None
             assert final_composite_video.background_music is not None
             assert not final_composite_video.metadata.is_prompt_read_aloud
@@ -308,7 +312,7 @@ class TestCompositeVideo:
 
             video_comp = CompositeVideo()
             video_comp.append_video(vid1).append_video(vid2)
-            await video_comp.build(
+            await LocalEngine(
                 build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         generate_background_music=False, apply_background_music=True
@@ -316,8 +320,7 @@ class TestCompositeVideo:
                     include_read_aloud_prompt=True,
                     prompt=tools.test_prompt_library["tired"],
                 )
-            )
-
+            ).generate(video_comp)
             assert video_comp.media_url is not None
             assert video_comp.background_music is not None
             # assert (
@@ -428,7 +431,7 @@ class TestCompositeVideo:
             vid_cp_final.append_video(comp_start).append_video(transition).append_video(
                 comp_end
             )
-            await vid_cp_final.build(build_settings=bld_settings)
+            await LocalEngine(build_settings=bld_settings).generate(vid_cp_final)
             assert vid_cp_final.media_url is not None, "Media URL should not be null"
 
     @pytest.mark.local_integration
@@ -467,4 +470,4 @@ class TestCompositeVideo:
                 comp_end
             )
             # with pytest.raises(AssertionError):
-            await vid_cp_final.build(build_settings=bld_settings)
+            await LocalEngine(build_settings=bld_settings).generate(vid_cp_final)

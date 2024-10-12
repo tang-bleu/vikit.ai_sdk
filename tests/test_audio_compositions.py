@@ -23,14 +23,18 @@ import warnings
 import pytest
 from loguru import logger
 
-from tests.testing_medias import (get_cat_video_path,
-                                  get_generated_3s_forest_video_1_path,
-                                  get_generated_3s_forest_video_2_path)
+from tests.testing_medias import (
+    get_cat_video_path,
+    get_generated_3s_forest_video_1_path,
+    get_generated_3s_forest_video_2_path,
+)
 from tests.testing_tools import test_prompt_library
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.music_building_context import MusicBuildingContext
-from vikit.video.building.handlers.gen_read_aloud_prompt_and_audio_merging_handler import \
-    ReadAloudPromptAudioMergingHandler
+from vikit.video.building.handlers.gen_read_aloud_prompt_and_audio_merging_handler import (
+    ReadAloudPromptAudioMergingHandler,
+)
 from vikit.video.composite_video import CompositeVideo
 from vikit.video.imported_video import ImportedVideo
 from vikit.video.video import VideoBuildSettings
@@ -75,7 +79,7 @@ class TestAudioCompositions:
             final_video = test_video_mixer.append_video(video_start).append_video(
                 video_end
             )
-            final_video = await final_video.build(
+            final_video = await LocalEngine(
                 VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True
@@ -84,7 +88,7 @@ class TestAudioCompositions:
                     prompt=test_prompt_library["moss_stones-train_boy"],
                     test_mode=False,
                 )
-            )
+            ).generate(final_video)
             assert final_video.media_url is not None
             assert final_video.background_music is not None
 
@@ -100,13 +104,13 @@ class TestAudioCompositions:
 
             video_comp = CompositeVideo()
             video_comp.append_video(vid1).append_video(vid2)
-            await video_comp.build(
+            await LocalEngine(
                 build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True, generate_background_music=True
                     ),
                     test_mode=True,
-                )
+                ).generate(video_comp)
             )
 
             assert video_comp.background_music is not None, f"No background music set"

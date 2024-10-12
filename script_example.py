@@ -22,6 +22,7 @@ from loguru import logger  # type: ignore
 
 from vikit.common.context_managers import WorkingFolderContext
 from vikit.common.decorators import log_function_params
+from vikit.local_engine import LocalEngine
 from vikit.music_building_context import MusicBuildingContext
 from vikit.prompt.prompt_factory import PromptFactory
 from vikit.video.composite_video import CompositeVideo
@@ -97,7 +98,7 @@ async def batch_raw_text_based_prompting(
         video_build_settings.prompt = prompt_obj
 
         video = RawTextBasedVideo(prompt_content)
-        await video.build(build_settings=video_build_settings)
+        await LocalEngine(build_settings=video_build_settings).generate(video)
 
 
 async def composite_textonly_prompting(
@@ -158,7 +159,7 @@ async def composite_textonly_prompting(
     prompt.negative_prompt = negative_prompt
     composite_build_settings.prompt = prompt
 
-    await vid_cp_sub.build(build_settings=composite_build_settings)
+    await LocalEngine(build_settings=composite_build_settings).geneate(vid_cp_sub)
 
 
 async def create_single_image_based_video(
@@ -213,7 +214,7 @@ async def batch_image_based_prompting(prompt_file: str):
             text="A cool music for picnic",
             build_settings=build_settings,
         )
-        await video.build(build_settings=build_settings)
+        await LocalEngine(build_settings=build_settings).generate(video)
 
         assert video.media_url, "media URL was not updated"
         assert os.path.exists(
@@ -271,7 +272,7 @@ async def composite_imageonly_prompting(prompt_file: str):
     composite_build_settings.prompt = await PromptFactory().create_prompt_from_text(
         "A happy picnic music!"
     )
-    await vid_cp_sub.build(build_settings=composite_build_settings)
+    await LocalEngine(build_settings=composite_build_settings).generate(vid_cp_sub)
 
 
 async def composite_mixed_prompting(
@@ -345,7 +346,7 @@ async def composite_mixed_prompting(
     composite_build_settings.prompt = await PromptFactory().create_prompt_from_text(
         "A happy Guitar music!"
     )
-    await vid_cp_sub.build(build_settings=composite_build_settings)
+    await LocalEngine(build_settings=composite_build_settings).generate(vid_cp_sub)
 
 
 async def prompt_based_composite(prompt: str, model_provider="stabilityai"):
@@ -370,7 +371,7 @@ async def prompt_based_composite(prompt: str, model_provider="stabilityai"):
     # you can set negative prompt, for the moment it is  effective only for Haiper
     prompt.negative_prompt = negative_prompt
     video = PromptBasedVideo(prompt=prompt)
-    await video.build(build_settings=video_build_settings)
+    await LocalEngine(build_settings=video_build_settings).generate(video)
 
 
 if __name__ == "__main__":

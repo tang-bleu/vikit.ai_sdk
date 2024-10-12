@@ -20,6 +20,7 @@ import pytest
 from loguru import logger
 
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.video.raw_text_based_video import RawTextBasedVideo
 from vikit.video.video import VideoBuildSettings
 
@@ -43,7 +44,9 @@ class TestRawTextBasedVideo:
     ):
         with WorkingFolderContext():
             video = RawTextBasedVideo("This is a prompt text")
-            built = await video.build(build_settings=VideoBuildSettings())
+            built = await LocalEngine(build_settings=VideoBuildSettings()).generate(
+                video
+            )
 
             assert built.media_url is not None
 
@@ -55,9 +58,9 @@ class TestRawTextBasedVideo:
     ):
         with WorkingFolderContext():
             video = RawTextBasedVideo("This is a prompt text")
-            built = await video.build(
+            built = await LocalEngine(
                 build_settings=VideoBuildSettings(output_video_file_name="my_video.mp4")
-            )
+            ).generate(video)
 
             assert built.media_url is not None
             assert os.path.exists(
@@ -72,10 +75,9 @@ class TestRawTextBasedVideo:
         with WorkingFolderContext():
             video = RawTextBasedVideo("This is a prompt text")
             target_path = os.makedirs("testdir")
-            built = await video.build(
+            built = await LocalEngine(
                 build_settings=VideoBuildSettings(target_dir_path="testdir")
-            )
-
+            ).generate(video)
             assert built.media_url is not None
             assert os.path.isdir("testdir"), f"Directory not found: {target_path}"
 
@@ -87,12 +89,11 @@ class TestRawTextBasedVideo:
         with WorkingFolderContext():
             video = RawTextBasedVideo("This is a prompt text")
             target_path = os.makedirs("testdir2")
-            built = await video.build(
+            built = await LocalEngine(
                 build_settings=VideoBuildSettings(
                     target_dir_path="testdir2",
                     output_video_file_name="my_othervideo.mp4",
                 )
-            )
-
+            ).generate(video)
             assert built.media_url is not None
             assert os.path.isdir("testdir2"), f"Directory not found: {target_path}"

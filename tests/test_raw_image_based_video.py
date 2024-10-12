@@ -22,6 +22,7 @@ from loguru import logger
 import vikit.gateways.ML_models_gateway_factory as ML_models_gateway_factory
 from tests.testing_medias import get_test_prompt_image
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.music_building_context import MusicBuildingContext
 from vikit.prompt.prompt_factory import PromptFactory
 
@@ -67,7 +68,7 @@ class TestRawImagePromptBasedVideo:
                 title="test_image_prompt",
             )
             pbvid.build_settings = VideoBuildSettings(prompt=image_prompt)
-            await pbvid.build(pbvid.build_settings)
+            await LocalEngine(build_settings=pbvid.build_settings).generate(pbvid)
             logger.debug(
                 f"Test build_single_video_no_bg_music_without_subs, media URL: {pbvid.media_url}"
             )
@@ -88,7 +89,7 @@ class TestRawImagePromptBasedVideo:
                 title="test_image_prompt",
             )
             pbvid.build_settings = VideoBuildSettings(prompt=image_prompt)
-            await pbvid.build(pbvid.build_settings)
+            await LocalEngine(build_settings=pbvid.build_settings).generate(pbvid)
 
             assert pbvid._background_music_file_name is None
             assert pbvid.media_url, f"media URL was not updated: {pbvid.media_url}"
@@ -105,15 +106,14 @@ class TestRawImagePromptBasedVideo:
                 prompt=image_prompt,
                 title="test_image_prompt",
             )
-            await pbvid.build(
+            await LocalEngine(
                 build_settings=VideoBuildSettings(
                     music_building_context=MusicBuildingContext(
                         apply_background_music=True, generate_background_music=False
                     ),
                     prompt=image_prompt,
                 )
-            )
-
+            ).generate(pbvid)
             assert pbvid.media_url, f"media URL was not updated: {pbvid.media_url}"
             assert os.path.exists(pbvid.media_url), "The generated video does not exist"
 
@@ -140,7 +140,7 @@ class TestRawImagePromptBasedVideo:
                 title="test_image_prompt",
             )
 
-            await video.build(build_settings=build_settings)
+            await LocalEngine(build_settings=build_settings).generate(video)
 
             assert video.media_url, "media URL was not updated"
             assert os.path.exists(video.media_url), "The generated video does not exist"

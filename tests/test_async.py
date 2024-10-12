@@ -20,7 +20,9 @@ import pytest
 from loguru import logger
 
 from vikit.common.context_managers import WorkingFolderContext
+from vikit.local_engine import LocalEngine
 from vikit.video.raw_text_based_video import RawTextBasedVideo
+from vikit.video.video_build_settings import VideoBuildSettings
 
 warnings.simplefilter("ignore", category=ResourceWarning)
 warnings.simplefilter("ignore", category=UserWarning)
@@ -33,7 +35,7 @@ class TestAsync:
     def test_sinc_on_async_build_single_video_no_bg_music_without_subs(self):
         with WorkingFolderContext():
             video = RawTextBasedVideo("This is a prompt text")
-            built = video.build()
+            built = LocalEngine(build_settings=VideoBuildSettings()).generate(video)
 
             assert built.media_url is not None
             assert os.path.exists(video.media_url), "The generated video does not exist"
@@ -43,7 +45,9 @@ class TestAsync:
     async def test_build_single_video_no_bg_music_without_subs(self):
         with WorkingFolderContext():
             video = RawTextBasedVideo("This is a prompt text")
-            built = await video.build_async()
+            built = await LocalEngine(
+                build_settings=VideoBuildSettings()
+            ).generate_async(video)
 
             assert built.media_url is not None
             assert os.path.exists(video.media_url), "The generated video does not exist"

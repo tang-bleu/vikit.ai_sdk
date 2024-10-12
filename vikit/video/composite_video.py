@@ -21,6 +21,7 @@ from loguru import logger
 
 import vikit.common.config as config
 from vikit.music_building_context import MusicBuildingContext
+from vikit.local_engine import LocalEngine
 from vikit.video.building.build_order import (
     get_lazy_dependency_chain_build_order,
     is_composite_video,
@@ -192,6 +193,8 @@ class CompositeVideo(Video, is_composite_video):
     async def run_pre_build_actions_hook(self, build_settings: VideoBuildSettings):
         self.video_list = self.cleanse_video_list()
 
+    # TODO: Refactor this method by performing an inversion of control: the local engine instance
+    # that is attempting to generate this composite video should be generating the components.
     async def run_build_core_logic_hook(
         self,
         build_settings=VideoBuildSettings(),
@@ -224,11 +227,9 @@ class CompositeVideo(Video, is_composite_video):
             no_dependency_videos = [
                 v for v in ordered_video_list if not v.video_dependencies
             ]
+            video_generator = LocalEngine(self.get_children_build_settings())
             await asyncio.gather(
-                *(
-                    v.build(self.get_children_build_settings())
-                    for v in no_dependency_videos
-                )
+                *(video_generator.generate(v) for v in no_dependency_videos)
             )
             with_dependency_videos = [
                 v for v in ordered_video_list if v.video_dependencies
@@ -241,11 +242,7 @@ class CompositeVideo(Video, is_composite_video):
                         dep._is_video_built for dep in video.video_dependencies
                     )
                     if dependencies_processed:
-                        tasks.append(
-                            video.build(
-                                build_settings=self.get_children_build_settings()
-                            )
-                        )
+                        tasks.append(video_generator.generate(video))
                         with_dependency_videos.remove(video)
 
                 if tasks:
